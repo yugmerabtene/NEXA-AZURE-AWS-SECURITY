@@ -1,88 +1,96 @@
-# LAB-01 – Création et gestion des identités dans Azure Active Directory (Azure AD)
+# LAB-01 — Création et gestion des identités dans Azure Active Directory
 
 ---
 
-## Objectifs du Lab
+## Objectifs pédagogiques
 
-* Comprendre les différents types d’identités dans Azure AD : utilisateur, service principal, identité managée
-* Créer ces identités avec Azure CLI via Azure Cloud Shell
-* Identifier l’utilisation de chaque type d’identité pour les accès sécurisés
-* Se préparer à l’étape suivante : authentification et autorisation
-
----
-
-## 1. Introduction – Qu’est-ce qu’une identité dans Azure AD ?
-
-Dans Azure Active Directory, une **identité** est un ensemble d’attributs permettant à un utilisateur ou une application de s’authentifier et d’accéder à des ressources. Chaque identité possède des éléments comme :
-
-* Un nom d’affichage
-* Un nom d’utilisateur unique (User Principal Name)
-* Un mot de passe (ou un certificat dans certains cas)
+* Comprendre les différents types d’identités Azure AD : utilisateurs, service principals, identités managées
+* Créer un tenant Azure AD personnel
+* Attribuer les rôles nécessaires pour créer des identités
+* Créer et tester les identités via Azure CLI dans Azure Cloud Shell
 
 ---
 
-## 2. Moyens de créer des identités
+## Prérequis
 
-Azure offre plusieurs outils pour créer des identités :
-
-* Le **Portail Azure** (interface graphique conviviale)
-* **Azure PowerShell**
-* **Azure CLI** (utilisé ici)
-
-Azure CLI peut être utilisé localement ou depuis le service **Azure Cloud Shell**, accessible via [https://shell.azure.com](https://shell.azure.com) ou via l’icône en haut à droite du portail Azure.
+* Avoir un **compte Azure for Students actif**
+* Disposer d’un navigateur web
+* Se connecter à [https://portal.azure.com](https://portal.azure.com)
 
 ---
 
-## 3. Création d’un utilisateur Azure AD
+## Étape 0 — Créer un tenant Azure AD personnel (important)
 
-### Commande à exécuter
+### Pourquoi ?
+
+Avec un compte Azure for Students, **tu n’as pas les droits suffisants** dans le tenant par défaut pour créer des utilisateurs ou manipuler Azure AD librement.
+
+### Étapes
+
+1. Ouvre [https://portal.azure.com](https://portal.azure.com)
+2. Recherche **Azure Active Directory**
+3. Clique sur **+ Créer un tenant**
+4. Sélectionne **Azure Active Directory** (pas B2C)
+5. Remplis les champs :
+
+   * Nom de l’organisation : `MonTenantLab`
+   * Domaine : `monlab.onmicrosoft.com`
+   * Pays : France
+6. Clique sur **Créer**
+
+---
+
+## Étape 1 — Basculer vers le bon tenant
+
+1. Clique en haut à droite sur ton profil > **Basculer de répertoire**
+2. Choisis le tenant que tu viens de créer (`monlab.onmicrosoft.com`)
+3. Tu es maintenant **administrateur global** de ce tenant
+
+---
+
+## Étape 2 — Ouvrir Azure Cloud Shell
+
+1. Va sur [https://shell.azure.com](https://shell.azure.com)
+2. Choisis **Bash**
+3. Un groupe de ressources + stockage sera créé automatiquement (si c’est la 1re fois)
+
+---
+
+## Étape 3 — Créer un utilisateur Azure AD
 
 ```bash
 az ad user create \
   --display-name "Bob Miller" \
   --password dQ76bmz7rMVs9gSP \
-  --user-principal-name bob@contoso.com \
+  --user-principal-name bob@monlab.onmicrosoft.com \
   --force-change-password-next-sign-in true
 ```
-
-### Explication des options
-
-* `--display-name` : Nom visible de l’utilisateur
-* `--password` : Mot de passe initial, complexe
-* `--user-principal-name` : Identifiant de connexion unique (ex. [bob@contoso.com](mailto:bob@contoso.com))
-* `--force-change-password-next-sign-in` : Oblige à changer le mot de passe à la première connexion
 
 ### Résultat attendu
 
 ```json
 {
   "displayName": "Bob Miller",
-  "id": "6904c116-75bc-4e42-ba8b-5a0d1ac4bec4",
-  "userPrincipalName": "bob@contoso.com"
+  "id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "userPrincipalName": "bob@monlab.onmicrosoft.com"
 }
 ```
 
 ---
 
-### Exercice 1 – Créer l’utilisateur fictif Charlie
-
-Créez un nouvel utilisateur nommé Charlie :
+## Exercice 1 — Créer l’utilisateur Charlie
 
 ```bash
 az ad user create \
   --display-name "Charlie Stone" \
   --password gT92bnz8rNXv3yLP \
-  --user-principal-name charlie@contoso.com \
+  --user-principal-name charlie@monlab.onmicrosoft.com \
   --force-change-password-next-sign-in true
 ```
 
 ---
 
-## 4. Création d’un Service Principal (application)
-
-Un **service principal** est une identité pour une application qui doit interagir avec Azure.
-
-### Commande
+## Étape 4 — Créer un Service Principal
 
 ```bash
 az ad sp create-for-rbac -n "MyAmazingApp"
@@ -92,18 +100,16 @@ az ad sp create-for-rbac -n "MyAmazingApp"
 
 ```json
 {
-  "appId": "728cd0c5-8ada-459f-8476-144a003d4857",
+  "appId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
   "displayName": "MyAmazingApp",
-  "password": "2568Q~R0ltg5Q2_R_G-vs5gN6X2pdta",
-  "tenant": "00000000-0000-0000-0000-000000000000"
+  "password": "motDePasseUltraComplexe",
+  "tenant": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 ```
 
-Important : ne jamais exposer ces identifiants (mot de passe ou App ID).
-
 ---
 
-### Exercice 2 – Créer un autre Service Principal
+## Exercice 2 — Créer un autre Service Principal
 
 ```bash
 az ad sp create-for-rbac -n "MySecondApp"
@@ -111,16 +117,15 @@ az ad sp create-for-rbac -n "MySecondApp"
 
 ---
 
-## 5. Création d’une identité managée (Managed Identity)
+## Étape 5 — Créer une Identité Managée assignée par l’utilisateur
 
-Une **identité managée** permet à une ressource Azure (VM, App Service…) d’accéder à d’autres ressources Azure de manière sécurisée, sans gérer de mot de passe.
+1. Si besoin, créer un groupe de ressources :
 
-Deux types :
+```bash
+az group create --name MyResourceGroup --location westeurope
+```
 
-* **Assignée par le système** : liée à une seule ressource
-* **Assignée par l’utilisateur** : réutilisable entre plusieurs ressources
-
-### Commande pour créer une identité managée assignée par l’utilisateur
+2. Créer l’identité :
 
 ```bash
 az identity create \
@@ -132,15 +137,15 @@ az identity create \
 
 ```json
 {
-  "clientId": "b0f14b46-df49-4172-8325-8f7f6946005a",
   "name": "MyManagedIdentity",
-  "resourceGroup": "MyResourceGroup"
+  "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "principalId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 ```
 
 ---
 
-### Exercice 3 – Créer une autre identité managée
+## Exercice 3 — Créer une autre identité managée
 
 ```bash
 az identity create \
@@ -150,14 +155,13 @@ az identity create \
 
 ---
 
-## 6. Récapitulatif des identités créées
+## Résumé
 
-| Type d’identité    | Nom               | Identifiant                               | Secret utilisé                     |
-| ------------------ | ----------------- | ----------------------------------------- | ---------------------------------- |
-| Utilisateur (User) | Bob Miller        | [bob@contoso.com](mailto:bob@contoso.com) | dQ76bmz7rMVs9gSP                   |
-| Service Principal  | MyAmazingApp      | 728cd0c5-8ada-459f-8476-144a003d4857      | 2568Q\~R0ltg5Q2\_R\_G-vs5gN6X2pdta |
-| Identité managée   | MyManagedIdentity | b0f14b46-df49-4172-8325-8f7f6946005a      | Aucun                              |
+| Type d’identité   | Nom               | Identifiant unique                                                      | Mot de passe / Secret           |
+| ----------------- | ----------------- | ----------------------------------------------------------------------- | ------------------------------- |
+| Utilisateur       | Bob Miller        | [bob@monlab.onmicrosoft.com](mailto:bob@monlab.onmicrosoft.com)         | dQ76bmz7rMVs9gSP                |
+| Utilisateur       | Charlie Stone     | [charlie@monlab.onmicrosoft.com](mailto:charlie@monlab.onmicrosoft.com) | gT92bnz8rNXv3yLP                |
+| Service Principal | MyAmazingApp      | appId généré automatiquement                                            | password généré automatiquement |
+| Identité managée  | MyManagedIdentity | clientId généré automatiquement                                         | Aucun (géré par Azure)          |
 
 ---
-
-
